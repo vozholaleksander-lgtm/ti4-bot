@@ -114,7 +114,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     selected=random.sample(pool, k=min(QUESTIONS_PER_RUN-1, len(pool)))
     selected.append(final_question)
     context.user_data["current_questions"]=selected
-    await update.message.reply_text("🌌 Тест-приключение: какая фракция Twilight Imperium тебе подходит?
+    await update.message.reply_text(
+    """🚀 Тест-приключение:
+какая фракция Twilight Imperium тебе подходит?"""
+)
 
 Каждый проход немного отличается. Отвечай быстро — первый импульс честнее расчёта.
 
