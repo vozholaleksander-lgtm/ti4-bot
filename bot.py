@@ -99,8 +99,7 @@ def format_result(result, scores):
     elif scores["LAW"]>=8: lines.append("Ты можешь переоценить безопасность.")
     else: lines.append("Ты можешь распылиться и поздно выбрать главный путь.")
     lines += ["", "📲 Скинь тест другу:", "https://t.me/TwinImpFbot", "", "Нажми /start, чтобы пройти заново."]
-    return "
-".join(lines)
+    return "\n".join(lines)
 
 def get_question_keyboard(q_index, context):
     current_questions=context.user_data.get("current_questions", QUESTIONS)
