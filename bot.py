@@ -107,21 +107,25 @@ def get_question_keyboard(q_index, context):
     return InlineKeyboardMarkup([[InlineKeyboardButton(text, callback_data=f"answer:{q_index}:{i}") ] for i,(text,_) in enumerate(question["answers"])])
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["q_index"]=0
-    context.user_data["scores"]=defaultdict(int)
-    final_question=QUESTIONS[-1]
-    pool=QUESTIONS[:-1]
-    selected=random.sample(pool, k=min(QUESTIONS_PER_RUN-1, len(pool)))
+    context.user_data["q_index"] = 0
+    context.user_data["scores"] = defaultdict(int)
+
+    final_question = QUESTIONS[-1]
+    pool = QUESTIONS[:-1]
+
+    selected = random.sample(pool, k=min(QUESTIONS_PER_RUN - 1, len(pool)))
     selected.append(final_question)
-    context.user_data["current_questions"]=selected
-    await update.message.reply_text(
-    """🚀 Тест-приключение:
-какая фракция Twilight Imperium тебе подходит?"""
-)
 
-Каждый проход немного отличается. Отвечай быстро — первый импульс честнее расчёта.
+    context.user_data["current_questions"] = selected
 
-Начинаем.")
+    intro = """🌌 Тест-приключение: какая фракция Twilight Imperium тебе подходит?
+
+Каждый проход немного отличается.
+Отвечай быстро — первый импульс честнее расчёта.
+
+Начинаем."""
+
+    await update.message.reply_text(intro)
     await ask_question(update, context)
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
