@@ -137,7 +137,12 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.effective_chat.send_message(format_result(result, scores))
         return
     question=current_questions[q_index]
-    await update.effective_chat.send_message(f"Вопрос {q_index+1}/{len(current_questions)}
+    await update.effective_chat.send_message(message_text = (
+    f"Вопрос {q_index + 1}/{len(current_questions)}\n\n"
+    f"{question['text']}"
+)
+
+await update.effective_chat.send_message(message_text)
 
 {question[0]}", reply_markup=get_question_keyboard(q_index, context))
 
