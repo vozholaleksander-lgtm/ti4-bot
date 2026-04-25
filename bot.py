@@ -142,9 +142,10 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     f"{question['text']}"
 )
 
-await update.effective_chat.send_message(message_text)
-
-{question[0]}", reply_markup=get_question_keyboard(q_index, context))
+await update.effective_chat.send_message(
+    message_text,
+    reply_markup=get_question_keyboard(q_index, context)
+)
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query=update.callback_query
