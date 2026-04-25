@@ -1,4 +1,5 @@
 import os
+import random
 import logging
 from collections import defaultdict
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -675,8 +676,29 @@ def format_result(result, scores):
     return "\n".join(lines)
 
 
-def get_question_keyboard(q_index):
-    question = QUESTIONS[q_index]
+# =========================
+# ВАРИАТИВНОСТЬ ТЕСТА
+# =========================
+# Первые вопросы всегда задаются: они задают базовый психологический вектор.
+# Последний вопрос всегда финальный: он красиво закрывает тест.
+# Средние вопросы выбираются случайно, поэтому каждый проход немного отличается.
+ALWAYS_START_QUESTIONS = 3
+RANDOM_MIDDLE_QUESTIONS = 12
+ALWAYS_END_QUESTIONS = 1
+
+def build_question_set():
+    start_questions = QUESTIONS[:ALWAYS_START_QUESTIONS]
+    end_questions = QUESTIONS[-ALWAYS_END_QUESTIONS:] if ALWAYS_END_QUESTIONS else []
+    middle_questions = QUESTIONS[ALWAYS_START_QUESTIONS:len(QUESTIONS) - ALWAYS_END_QUESTIONS]
+
+    amount = min(RANDOM_MIDDLE_QUESTIONS, len(middle_questions))
+    random_middle = random.sample(middle_questions, amount)
+
+    return start_questions + random_middle + end_questions
+
+
+def get_question_keyboard(q_index, questions):
+    question = questions[q_index]
     keyboard = []
     for i, (answer_text, _) in enumerate(question["answers"]):
         keyboard.append([InlineKeyboardButton(answer_text, callback_data=f"answer:{q_index}:{i}")])
@@ -685,10 +707,12 @@ def get_question_keyboard(q_index):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["q_index"] = 0
     context.user_data["scores"] = defaultdict(int)
+    context.user_data["questions"] = build_question_set()
 
     intro = (
         "🌌 Тест-приключение: какая фракция Twilight Imperium тебе подходит?\n\n"
         "Это не прямой тест про игру. Отвечай на жизненные, RPG и sci-fi ситуации.\n"
+        "Каждый проход немного отличается: часть ситуаций выбирается случайно.\n"
         "Выбирай быстро: первый импульс честнее.\n\n"
         "Начинаем."
     )
@@ -697,17 +721,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q_index = context.user_data.get("q_index", 0)
+    questions = context.user_data.get("questions")
 
-    if q_index >= len(QUESTIONS):
+    if not questions:
+        questions = build_question_set()
+        context.user_data["questions"] = questions
+
+    if q_index >= len(questions):
         scores = context.user_data.get("scores", defaultdict(int))
         result = calculate_result(scores)
         await update.effective_chat.send_message(format_result(result, scores))
         return
 
-    question = QUESTIONS[q_index]
+    question = questions[q_index]
     await update.effective_chat.send_message(
-        f"Вопрос {q_index + 1}/{len(QUESTIONS)}\n\n{question['text']}",
-        reply_markup=get_question_keyboard(q_index),
+        f"Вопрос {q_index + 1}/{len(questions)}\n\n{question['text']}",
+        reply_markup=get_question_keyboard(q_index, questions),
     )
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -723,7 +752,12 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Этот вопрос уже неактуален. Нажми /start, если хочешь начать заново.")
         return
 
-    answer_text, tags = QUESTIONS[q_index]["answers"][answer_index]
+    questions = context.user_data.get("questions")
+    if not questions:
+        await query.edit_message_text("Сессия устарела. Нажми /start, чтобы начать заново.")
+        return
+
+    answer_text, tags = questions[q_index]["answers"][answer_index]
 
     scores = context.user_data.get("scores")
     if scores is None:
@@ -734,7 +768,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
         scores[tag] += value
 
     await query.edit_message_text(
-        f"Вопрос {q_index + 1}/{len(QUESTIONS)}\n\n"
+        f"Вопрос {q_index + 1}/{len(questions)}\n\n"
         f"Твой выбор:\n{answer_text}"
     )
 
