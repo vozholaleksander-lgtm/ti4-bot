@@ -541,8 +541,13 @@ def get_question_keyboard(q_index, context):
     current_questions = context.user_data.get("current_questions", QUESTIONS)
     question = current_questions[q_index]
 
+    if isinstance(question, dict):
+        answers = question["answers"]
+    else:
+        answers = question[1]
+
     keyboard = []
-    for i, _ in enumerate(question["answers"]):
+    for i, _ in enumerate(answers):
         keyboard.append([
             InlineKeyboardButton(
                 f"Вариант {i + 1}",
@@ -587,13 +592,20 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     question = current_questions[q_index]
 
+    if isinstance(question, dict):
+        question_text = question["text"]
+        answers = question["answers"]
+    else:
+        question_text = question[0]
+        answers = question[1]
+
     answers_text = []
-    for i, (answer_text, _) in enumerate(question["answers"], start=1):
+    for i, (answer_text, _) in enumerate(answers, start=1):
         answers_text.append(f"{i}. {answer_text}")
 
     message_text = (
         f"Вопрос {q_index + 1}/{len(current_questions)}\n\n"
-        f"{question['text']}\n\n"
+        f"{question_text}\n\n"
         + "\n".join(answers_text)
     )
 
