@@ -553,16 +553,27 @@ def get_question_keyboard(q_index, context):
     return InlineKeyboardMarkup(keyboard)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["q_index"] = 0
-    context.user_data["scores"] = defaultdict(int)
-    final_question = QUESTIONS[-1]
-    pool = QUESTIONS[:-1]
-    selected = random.sample(pool, k=min(QUESTIONS_PER_RUN - 1, len(pool)))
-    selected.append(final_question)
-    context.user_data["current_questions"] = selected
-    intro = "🌌 Тест-приключение: какая фракция Twilight Imperium тебе подходит?\n\nКаждый проход немного отличается.\nОтвечай быстро — первый импульс честнее расчёта.\n\nНачинаем."
-    await update.message.reply_text(intro)
-    await ask_question(update, context)
+    try:
+        context.user_data["q_index"] = 0
+        context.user_data["scores"] = defaultdict(int)
+
+        final_question = QUESTIONS[-1]
+        pool = QUESTIONS[:-1]
+
+        selected = random.sample(pool, k=min(QUESTIONS_PER_RUN - 1, len(pool)))
+        selected.append(final_question)
+
+        context.user_data["current_questions"] = selected
+
+        await update.message.reply_text(
+            "🌌 Тест-приключение запущен.\n\nСейчас должен прийти первый вопрос."
+        )
+
+        await ask_question(update, context)
+
+    except Exception as e:
+        await update.message.reply_text(f"Ошибка в start:\n{type(e).__name__}\n{e}")
+        raise
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q_index = context.user_data.get("q_index", 0)
