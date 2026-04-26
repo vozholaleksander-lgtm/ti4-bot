@@ -567,14 +567,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q_index = context.user_data.get("q_index", 0)
     current_questions = context.user_data.get("current_questions", QUESTIONS)
+
     if q_index >= len(current_questions):
         scores = context.user_data.get("scores", defaultdict(int))
         result = calculate_result(scores)
         await update.effective_chat.send_message(format_result(result, scores))
         return
+
     question = current_questions[q_index]
-    message_text = f"Вопрос {q_index + 1}/{len(current_questions)}\n\n{question['text']}"
-    await update.effective_chat.send_message(message_text, reply_markup=get_question_keyboard(q_index, context))
+
+    answers_text = []
+    for i, (answer_text, _) in enumerate(question["answers"], start=1):
+        answers_text.append(f"{i}. {answer_text}")
+
+    message_text = (
+        f"Вопрос {q_index + 1}/{len(current_questions)}\n\n"
+        f"{question['text']}\n\n"
+        + "\n".join(answers_text)
+    )
+
+    await update.effective_chat.send_message(
+        message_text,
+        reply_markup=get_question_keyboard(q_index, context),
+    )
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
