@@ -617,22 +617,40 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     _, q_index_str, answer_index_str = query.data.split(":")
     q_index = int(q_index_str)
     answer_index = int(answer_index_str)
+
     current_q = context.user_data.get("q_index", 0)
     current_questions = context.user_data.get("current_questions", QUESTIONS)
+
     if q_index != current_q:
         await query.edit_message_text("Этот вопрос уже неактуален. Нажми /start, если хочешь начать заново.")
         return
-    answer_text, tags = current_questions[q_index]["answers"][answer_index]
+
+    question = current_questions[q_index]
+
+    if isinstance(question, dict):
+        answers = question["answers"]
+    else:
+        answers = question[1]
+
+    answer_text, tags = answers[answer_index]
+
     scores = context.user_data.get("scores")
     if scores is None:
         scores = defaultdict(int)
         context.user_data["scores"] = scores
+
     for tag, value in tags.items():
         scores[tag] += value
-    await query.edit_message_text(f"Вопрос {q_index + 1}/{len(current_questions)}\n\nТвой выбор:\n{answer_text}")
+
+    await query.edit_message_text(
+        f"Вопрос {q_index + 1}/{len(current_questions)}\n\n"
+        f"Твой выбор:\n{answer_text}"
+    )
+
     context.user_data["q_index"] = q_index + 1
     await ask_question(update, context)
 
