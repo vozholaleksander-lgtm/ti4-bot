@@ -540,9 +540,16 @@ def format_result(result, scores):
 def get_question_keyboard(q_index, context):
     current_questions = context.user_data.get("current_questions", QUESTIONS)
     question = current_questions[q_index]
+
     keyboard = []
-    for i, (answer_text, _) in enumerate(question["answers"]):
-        keyboard.append([InlineKeyboardButton(answer_text, callback_data=f"answer:{q_index}:{i}")])
+    for i, _ in enumerate(question["answers"]):
+        keyboard.append([
+            InlineKeyboardButton(
+                f"Вариант {i + 1}",
+                callback_data=f"answer:{q_index}:{i}"
+            )
+        ])
+
     return InlineKeyboardMarkup(keyboard)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
